@@ -1,0 +1,22 @@
+- name: Distributing zabbix repospanner check file
+  template:
+    src: "{{ item }}.j2"
+    dest: "/usr/lib/zabbix/{{ item }}"
+    mode: 0755
+  with_items:
+    - zabbix-repospanner-check
+    - zabbix-repospanner-lld
+  register: zabbix_templates   
+  tags:
+    - templates
+
+- name: Launching LLD to announce to zabbix
+  shell: /bin/zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i /usr/lib/zabbix/zabbix-repospanner-lld
+  ignore_errors: True
+  when: zabbix_templates is changed
+
+- name: Ensuring we reports values to zabbix for repospanner
+  cron:
+    name: Repospanner instances checks
+    job: /usr/lib/zabbix/zabbix-repospanner-check
+    minute: "*/2"

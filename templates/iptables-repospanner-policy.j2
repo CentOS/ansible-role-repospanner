@@ -1,0 +1,9 @@
+# Repospanner rules for cluster instance : {{ item.name }} (Ansible managed)
+# RPC nodes communication in the cluster
+{% for ip in item.rpc_allow_from %}
+-A INPUT -m state --state NEW -m tcp -p tcp --dport {{ item.rpc_port }} --source {{ ip }} -j ACCEPT
+{% endfor %}
+# http admin and client communication
+{% for ip in item.http_allow_from %}
+-A INPUT -m state --state NEW -m tcp -p tcp --dport {{ item.http_port }} --source {{ ip }} -j ACCEPT
+{% endfor %}

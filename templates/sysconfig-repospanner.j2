@@ -1,0 +1,7 @@
+# Default sysconfig file used by the systemd unit to start in debug mode or not
+# To launch with debug, just add "--debug"
+{% if repospanner_debug %}
+debug="--debug"
+{% else %}
+debug=""
+{% endif %}

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#
+# Configured by: Ansible
+# Called by: Cron (ansible)
+# Purposes: reports repospanner cluster status back to zabbix server/proxy
+#
+
+# Repospanner Instances configured by Ansible on this host {{ inventory_hostname }}
+{% for instance in repospanner_instances %}
+## Instance {{ instance.name }}
+# Checking first cluster status
+repospanner --config /etc/repospanner/{{ instance.name }}.yml admin nodestatus --nagios|grep -qv OK
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k repospanner.status.[{{ instance.name }}] -o "$?" >/dev/null
+
+# Now the x509 cert validity (number of days)
+cert_end_date=$(openssl x509 -in /etc/pki/repospanner/{{ instance.name }}/{{ instance.tls_cert }} -text -noout|sed -n 's/ *Not After : *//p')
+
+if [ -n "$cert_end_date" ] ; 
+then
+    cert_end_date_seconds=$(date '+%s' --date "$cert_end_date")
+    now_seconds=$(date '+%s')
+    remaining_days=$((($cert_end_date_seconds-$now_seconds) /24/3600 ))
+fi
+zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -k repospanner.tls.validity.[{{ instance.name }}] -o "$remaining_days" >/dev/null
+##
+{% endfor %}

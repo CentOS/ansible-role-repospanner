@@ -1,0 +1,61 @@
+# default values for repospanner role
+# All the following variables should be in the repospanner_instances list, as repospanner would be multi-instances ready, so different settings per instances/config files/etc
+#
+# only needed if we want one host to also be able to launch "repospanner admin" cli
+# admin_cli: False
+# admin_tls_name: admin # will be expanded to admin.crt and admin.key
+
+# tcp/ports repospanner will listen on
+# rpc_port: 8443 # between nodes
+# http_port: 8444 # for admin and git pull/push if needed
+
+# Those files will be retrieved from $pkistore (outside of this role
+# Crypted repo not on public git
+# tls_ca_cert: ca.crt
+# tls_client_name: nodea.regiona
+
+# Repospanner needs to init its dabases but only on one node, aka first node
+# Just enable this on only one
+# repospanner_init_node: False
+# FQDN of the node that will be the first one, so that other nodes will join cluster by contacting it
+# master_node: nodea.regiona.domain.com
+
+# Following list is just there to define the name of the list items for TLS distribution (nested list)
+tls_certs:
+  - tls_ca_cert
+  - tls_cert
+  - tls_key
+
+tls_admin_certs:
+  - admin_ca_cert
+  - admin_cert
+  - admin_key
+
+tls_push_certs:
+  - admin_ca_cert
+  - push_cert
+  - push_key
+
+# Do we want to run in debug mode or not
+# Default to False
+repospanner_debug: False
+
+# Real repospanner instances declaration
+repospanner_instances:
+  - name: default
+    admin_cli: False
+    admin_ca_cert:
+    admin_cert:
+    admin_key:
+    rpc_port: 8443
+    rpc_allow_from:
+      - 127.0.0.1
+    http_port: 8444
+    http_allow_from:
+      - 127.0.0.1
+    tls_ca_cert: ca.crt
+    tls_cert: nodea.regiona.crt
+    tls_key: nodea.regiona.key
+    my_cn: localhost.localdomain
+    master_node : nodea.regiona.domain.com # to know how to join a cluster for other nodes
+    init_node: True # To be declared only on the first node

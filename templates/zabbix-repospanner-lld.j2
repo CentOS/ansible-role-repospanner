@@ -1,0 +1,1 @@
+- repospanner.lld.instances { "data": [ {% for instance in repospanner_instances -%} { "{{ '{#INSTANCE}' }}": "{{ instance.name }}", "{{ '{#RPCPORT}' }}": "{{ instance.rpc_port }}", "{{ '{#HTTPPORT}' }}": "{{ instance.http_port }}" } {%- if not loop.last -%},{% endif %} {% endfor %} ] }

@@ -1,0 +1,9 @@
+[Unit]
+Description=repoSpanner - instance %i
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/repospanner
+Type=simple
+ExecStart=/usr/bin/repospanner serve --config /etc/repospanner/%i.yml ${debug}
+LimitNOFILE=65536

@@ -1,0 +1,172 @@
+---
+- name: Ensuring repospanner pkgs are installed
+  yum:
+    state: latest
+    name: "{{ item }}"
+  with_items:
+    - repoSpanner
+    - repoSpanner-bridge
+  register: repospanner_refresh
+
+- name: Creating some needed directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+  with_items:
+    - /etc/repospanner
+
+- name: Creating some pki needed directories
+  file:
+    path: "/etc/pki/repospanner/{{ item.name }}"
+    state: directory
+    owner: root
+    group: root
+  with_items: "{{ repospanner_instances }}"
+  no_log: True
+  tags:
+    - config
+
+- name: Creating git directories per repospanner instance
+  file:
+    path: "{{ item.git_directory }}"
+    state: directory
+    owner: root
+    group: root
+  with_items: "{{ repospanner_instances }}"
+  no_log: True
+  tags:
+    - config
+
+- name: Configuring repospanner config.yml
+  template:
+    src: default-config.yml.j2
+    dest: "/etc/repospanner/{{ item.name }}.yml"
+    owner: root
+    group: root
+  with_items: "{{ repospanner_instances }}"  
+  no_log: False
+  tags:
+    - config
+
+- name: Configuring repospanner sysconfig
+  template:
+    src: sysconfig-repospanner.j2
+    dest: /etc/sysconfig/repospanner
+    owner: root
+    group: root
+  notify: restart_repospanner_instances
+  tags:
+    - config
+
+
+- name: Distributing x509 files
+  copy:
+    src: "{{ pkistore }}/repospanner/{{ item.0[item.1] }}"
+    dest: "/etc/pki/repospanner/{{ item.0.name }}/{{ item.0[item.1] }}"
+  with_nested:
+    - "{{ repospanner_instances }}"
+    - "{{ tls_certs }}"
+  tags:
+    - config
+  no_log: False
+
+- name: Distributing x509 files for admin cli
+  copy:
+    src: "{{ pkistore }}/repospanner/{{ item.0[item.1] }}"
+    dest: "/etc/pki/repospanner/{{ item.0.name }}/{{ item.0[item.1] }}"
+  with_nested:
+    - "{{ repospanner_instances }}"
+    - "{{ tls_admin_certs }}"
+  #when: item.0.admin_cli is defined and item.0.admin_cli 
+  tags:
+    - tls
+
+- name: Distributing x509 files for push rights
+  copy:
+    src: "{{ pkistore }}/repospanner/{{ item.0[item.1] }}"
+    dest: "/etc/pki/repospanner/{{ item.0.name }}/{{ item.0[item.1] }}"
+  with_nested:
+    - "{{ repospanner_instances }}"
+    - "{{ tls_push_certs }}"
+  #when: item.0.admin_cli is defined and item.0.admin_cli 
+  tags:
+    - tls
+
+- name: Initializing repospanner db (only once)
+  command: "repospanner serve --spawn --config /etc/repospanner/{{ item.name }}.yml"
+  args:
+    creates: "/var/lib/repospanner/{{ item.name }}/state/state.json"
+  with_items: "{{ repospanner_instances }}"
+  when: item.init_node is defined and item.init_node
+  no_log: True
+
+- name: Adding repospanner instance to systemd
+  copy:
+    src: repospanner@.service
+    dest: /etc/systemd/system/repospanner@.service
+    owner: root
+  register: repospanner_systemd
+  tags:
+    - systemd
+
+- name: Reloading systemd if needed
+  shell: /usr/bin/systemctl daemon-reload
+  when: repospanner_systemd is changed
+  tags:
+    - systemd
+
+- name: Starting first repospanner
+  service:
+    name: "repospanner@{{ item.name }}"
+    state: started
+    enabled: True
+  with_items: "{{ repospanner_instances }}"
+  when: item.init_node is defined and item.init_node
+  no_log: True
+
+- name: Distributing iptables policy files
+  template:
+    src: iptables-repospanner-policy.j2
+    dest: "/etc/sysconfig/iptables.d/01-input-service-repospanner-{{ item.name }}"
+  with_items: "{{ repospanner_instances }}"
+  no_log: True
+  tags:
+    - iptables
+
+- name: Opening firewall for rpc between nodes
+  include_role:
+    name: iptables
+    tasks_from: template-policy
+  tags:
+    - iptables
+
+- name: Other nodes can join repospanner cluster
+  command: "repospanner serve --joinnode https://{{ item.master_node}}:{{ item.rpc_port }} --config /etc/repospanner/{{ item.name }}.yml"
+  args:
+    creates: "/var/lib/repospanner/{{ item.name }}/state/state.json"
+  with_items: "{{ repospanner_instances }}"
+  when: item.init_node is defined and not item.init_node
+  no_log: False
+
+- name: Starting other repospanner nodes
+  service:
+    name: "repospanner@{{ item.name }}"
+    state: started
+    enabled: True
+  with_items: "{{ repospanner_instances }}"
+  when: item.init_node is defined and not item.init_node
+  no_log: True
+
+- name: Restarting repospanner instances on pkg update
+  service:
+    name: "repospanner@{{ item.name }}"
+    state: restarted
+  with_items: "{{ repospanner_instances }}"
+  when: repospanner_refresh is changed
+  no_log: True
+
+- include_tasks: monitoring.yml
+  tags:
+    - templates

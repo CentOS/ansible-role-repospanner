@@ -1,0 +1,57 @@
+---
+ca:
+  path: /etc/pki/repospanner/{{ item.name }}
+
+{% if item.admin_cli %}
+admin:
+  url:  https://{{ item.my_cn }}:{{ item.http_port }}/
+  ca:   /etc/pki/repospanner/{{ item.name }}/{{ item.admin_ca_cert }}
+  cert: /etc/pki/repospanner/{{ item.name }}/{{ item.admin_cert }}
+  key:  /etc/pki/repospanner/{{ item.name }}/{{ item.admin_key }}
+{% endif %}
+storage:
+  state: /var/lib/repospanner/{{ item.name }}/state
+  git:
+    type: tree
+    clustered: true
+    directory: {{ item.git_directory }}
+listen:
+  rpc:  :{{ item.rpc_port }}
+  http: :{{ item.http_port }}
+certificates:
+  ca: /etc/pki/repospanner/{{ item.name }}/{{ item.tls_ca_cert }}
+  client:
+    cert: /etc/pki/repospanner/{{ item.name }}/{{ item.tls_cert }}
+    key:  /etc/pki/repospanner/{{ item.name }}/{{ item.tls_key }}
+  server:
+    default:
+      cert: /etc/pki/repospanner/{{ item.name }}/{{ item.tls_cert }}
+      key:  /etc/pki/repospanner/{{ item.name }}/{{ item.tls_key }}
+hooks:
+  bubblewrap:
+    enabled: false
+    {% if repospanner_debug -%}
+    debug: true
+    {% else -%}
+    debug: false
+    {% endif -%}
+    unshare:
+    - net
+    - ipc
+    - pid
+    - uts
+    share_net: false
+    mount_proc: true
+    mount_dev: true
+    uid:
+    gid:
+    hostname: {{ ansible_fqdn }}
+    bind:
+    ro_bind:
+      /usr: /usr
+    symlink:
+      usr/lib64: /lib64
+      usr/bin: /bin
+  runner: /usr/libexec/repohookrunner
+  user: 0
+

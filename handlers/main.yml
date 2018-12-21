@@ -1,0 +1,12 @@
+---
+- name: restart_repospanner
+  service:
+    name: repospanner
+    state: restarted
+ 
+- name: restart_repospanner_instances
+  service:
+    name: "repospanner@{{ item.name }}"
+    state: restarted
+  with_items: "{{ repospanner_instances }}"
+ 
