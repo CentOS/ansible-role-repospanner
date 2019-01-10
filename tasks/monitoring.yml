@@ -1,3 +1,14 @@
+- name: Configuring agent in Zabbix server
+  include_role:
+    name: zabbix-server
+    tasks_from: agent_config
+  vars:
+    zabbix_templates: "{{ zabbix_repospanner_templates }}"
+    zabbix_groups: "{{ zabbix_repospanner_groups }}"
+  delegate_to: "{{ zabbix_api_srv }}"  
+  tags:
+    - monitoring
+
 - name: Distributing zabbix repospanner check file
   template:
     src: "{{ item }}.j2"

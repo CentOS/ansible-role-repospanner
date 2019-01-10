@@ -59,3 +59,10 @@ repospanner_instances:
     my_cn: localhost.localdomain
     master_node : nodea.regiona.domain.com # to know how to join a cluster for other nodes
     init_node: True # To be declared only on the first node
+
+
+# Zabbix/monitoring part
+zabbix_repospanner_templates:
+  - Template CentOS Repospanner
+zabbix_repospanner_groups:
+  - CentOS Repospanner Cluster nodes
