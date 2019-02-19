@@ -8,6 +8,7 @@
   delegate_to: "{{ zabbix_api_srv }}"  
   tags:
     - monitoring
+  when: zabbix_api_srv is defined
 
 - name: Distributing zabbix repospanner check file
   template:
