@@ -24,7 +24,8 @@
     owner: root
     group: root
   with_items: "{{ repospanner_instances }}"
-  no_log: True
+  loop_control:
+    label: '{{ item.name }}'
   tags:
     - config
 
@@ -35,7 +36,8 @@
     owner: root
     group: root
   with_items: "{{ repospanner_instances }}"
-  no_log: True
+  loop_control:
+    label: '{{ item.name }}'
   tags:
     - config
 
@@ -46,7 +48,8 @@
     owner: root
     group: root
   with_items: "{{ repospanner_instances }}"  
-  no_log: False
+  loop_control:
+    label: '{{ item.name }}'
   tags:
     - config
 
@@ -70,7 +73,9 @@
     - "{{ tls_certs }}"
   tags:
     - config
-  no_log: False
+  loop_control:
+    label: '{{ item.0.name }}'
+ 
 
 - name: Distributing x509 files for admin cli
   copy:
@@ -80,6 +85,8 @@
     - "{{ repospanner_instances }}"
     - "{{ tls_admin_certs }}"
   #when: item.0.admin_cli is defined and item.0.admin_cli 
+  loop_control:
+    label: '{{ item.0.name }}'
   tags:
     - tls
 
@@ -91,6 +98,8 @@
     - "{{ repospanner_instances }}"
     - "{{ tls_push_certs }}"
   #when: item.0.admin_cli is defined and item.0.admin_cli 
+  loop_control:
+    label: '{{ item.0.name }}'
   tags:
     - tls
 
@@ -148,8 +157,9 @@
     creates: "/var/lib/repospanner/{{ item.name }}/state/state.json"
   with_items: "{{ repospanner_instances }}"
   when: item.init_node is defined and not item.init_node
-  no_log: False
-
+  loop_control:
+    label: '{{ item.name }}'
+ 
 - name: Starting other repospanner nodes
   service:
     name: "repospanner@{{ item.name }}"
@@ -165,8 +175,9 @@
     state: restarted
   with_items: "{{ repospanner_instances }}"
   when: repospanner_refresh is changed
-  no_log: True
-
+  loop_control:
+    label: '{{ item.name }}'
+ 
 - include_tasks: monitoring.yml
   tags:
     - templates
