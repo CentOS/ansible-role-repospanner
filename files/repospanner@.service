@@ -2,6 +2,10 @@
 Description=repoSpanner - instance %i
 After=network.target
 
+[Install]
+WantedBy=multi-user.target
+Alias=repospanner-instances.target
+
 [Service]
 EnvironmentFile=/etc/sysconfig/repospanner
 Type=simple

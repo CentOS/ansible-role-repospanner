@@ -23,7 +23,7 @@
     - templates
 
 - name: Launching LLD to announce to zabbix
-  shell: /bin/zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i /usr/lib/zabbix/zabbix-repospanner-lld
+  shell: sleep 3 ; /bin/zabbix_sender -c /etc/zabbix/zabbix_agentd.conf -i /usr/lib/zabbix/zabbix-repospanner-lld
   ignore_errors: True
   when: zabbix_templates is changed
 
