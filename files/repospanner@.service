@@ -10,4 +10,5 @@ Alias=repospanner-instances.target
 EnvironmentFile=/etc/sysconfig/repospanner
 Type=simple
 ExecStart=/usr/bin/repospanner serve --config /etc/repospanner/%i.yml ${debug}
+Restart=on-failure
 LimitNOFILE=65536
