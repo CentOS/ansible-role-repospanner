@@ -177,7 +177,18 @@
   when: repospanner_refresh is changed
   loop_control:
     label: '{{ item.name }}'
- 
+
+- name: Distributing wrapper script for cli/admin
+  template:
+    src: repospanner-wrapper.j2
+    dest: "/usr/local/sbin/repospanner-{{ item.name }}"
+    mode: 0750
+  with_items: "{{ repospanner_instances }}"
+  loop_control:
+    label: '{{ item.name }}'
+  tags:
+    - cli
+
 - include_tasks: monitoring.yml
   tags:
     - templates
