@@ -28,13 +28,13 @@ certificates:
       cert: /etc/pki/repospanner/{{ item.name }}/{{ item.tls_cert }}
       key:  /etc/pki/repospanner/{{ item.name }}/{{ item.tls_key }}
 hooks:
+  {% if repospanner_debug -%}
+  debug: true
+  {% else -%}
+  debug: false
+  {% endif -%}
   bubblewrap:
     enabled: false
-    {% if repospanner_debug -%}
-    debug: true
-    {% else -%}
-    debug: false
-    {% endif -%}
     unshare:
     - net
     - ipc
