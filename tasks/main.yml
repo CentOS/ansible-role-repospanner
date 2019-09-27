@@ -75,7 +75,8 @@
     - config
   loop_control:
     label: '{{ item.0.name }}'
- 
+  notify: restart_repospanner_instances
+   
 
 - name: Distributing x509 files for admin cli
   copy:
